@@ -1,0 +1,415 @@
+//graph.h
+#pragma once
+#include<iostream>
+#include <string>
+#include<unordered_map>
+using namespace std;
+
+class graph {
+    int no_cities;
+    int no_roads;
+public:
+
+    unordered_map<string, list< pair <string, int>>>adj_l;
+
+    graph();
+    void add_graph();
+
+    void add_road(string c1, string c2, int distance);
+    void add_new_city(string city_name);
+    void delete_city(string c);
+    void delete_road(string c1, string c2);
+    void display_graph();
+
+    string adjust_name(string word);
+    bool search_city(string name);
+    int get_no_cities();
+    int get_no_roads();
+
+
+};
+
+//graph.cpp
+
+#include"graph.h"
+#include <assert.h>
+using namespace std;
+
+graph::graph() {
+    no_cities = 0;
+    no_roads = 0;
+}
+
+void graph::add_graph() {
+    int distance;
+    int num_cities, num_roads;
+    string city_name, c1, c2;
+    char anw;
+    //
+    cout << "Enter how many cities you want to add: " << endl;//add cities
+    cin >> num_cities;
+
+    while (num_cities < 1) { //handle invalid case
+        cout << "Invalid number! ,please try again: " << endl;
+        cin >> num_cities;
+    }
+
+    for (int i = 1; i <= num_cities; i++) {
+
+        cout << "Enter the name of the city number:" << i << endl;
+        cin >> city_name;
+        city_name = adjust_name(city_name);
+        if (search_city(city_name) == false)
+            /////////////////////////////////@@@@@@@@@@@@@@@@@@
+        {
+            adj_l[city_name];
+            no_cities++;
+        }
+        else
+        {
+            cout << "this city already exists" << endl;
+            i--;
+        }
+
+    }
+    //
+    cout << "Enter how many roads you want to add: " << endl;//add roads
+
+    cin >> num_roads;
+
+    while (num_roads < 0) { //handle invalid case
+        cout << "Invalid number! ,please try again: " << endl;
+        cin >> num_roads;
+    }
+
+    for (int i = 1; i <= num_roads; i++) {
+        cout << "Enter the name of the first city along the road number: " << i << endl;
+        cin >> c1;
+        cout << "Enter the name of the second city along the road number: " << i << endl;
+        cin >> c2;
+        cout << "Enter the distance between the two cities in road number: " << i << endl;
+
+        cin >> distance;
+        while (distance <= 0) { //handle invalid case
+            cout << "Invalid number! ,please try again: " << endl;
+            cin >> distance;
+        }
+        if (!search_city(c1))
+        {
+            cout << "City " << c1 << " doesn't exist" << endl;
+            cout << "do you want to add this city :" << c1 << " at the graph ? press y to add" << endl;
+            cin >> anw;
+            switch (anw)
+            {
+            case 'y':
+            case'Y':add_new_city(c1);
+                break;
+            default:
+                break;
+            }
+            i--;
+            continue;
+        }
+        if (!search_city(c2))
+        {
+            cout << "City " << c2 << " doesn't exist" << endl;
+            cout << "do you want to add this city :" << c2 << " at the graph ? press y to add" << endl;
+            cin >> anw;
+            switch (anw)
+            {
+            case 'y':
+            case'Y':add_new_city(c2);
+                break;
+            default:
+                break;
+            }
+            i--;
+            continue;
+        }
+        add_road(c1, c2, distance);
+    }
+    cout << "Graph added successfully!" << endl;
+}
+
+
+
+void graph::add_new_city(string city_name)
+{
+    string word = adjust_name(city_name);
+    if (search_city(word) == false)
+    {
+        adj_l[word];
+        no_cities++;
+    }
+    else
+        cout << "this city already exists" << endl;
+
+}
+
+
+
+void graph::add_road(string c1, string c2, int distance) {
+    c1 = adjust_name(c1);
+    c2 = adjust_name(c2);
+
+    if (!search_city(c1)) {
+        cout << "City " << c1 << " doesn't exist." << endl;
+        return;
+    }
+
+    if (!search_city(c2)) {
+        cout << "City " << c2 << " doesn't exist." << endl;
+        return;
+    }
+    for (auto& it : adj_l[c1]) {
+        if (it.first == c2) {
+            cout << "Road between " << c1 << " and " << c2 << " already exists." << endl;
+            return;
+        }
+    }
+
+    adj_l[c1].push_back({ c2, distance });
+    adj_l[c2].push_back({ c1, distance });
+    no_roads++;
+}
+
+
+
+void graph::delete_city(string c) {
+    c = adjust_name(c);
+
+    // Check if the city exists
+    if (!search_city(c)) {
+        cout << "City " << c << " does not exist in the graph." << endl;
+        return;
+    }
+
+    // Remove all roads connected to the city
+    for (auto& l : adj_l) {
+        for (auto it = l.second.begin(); it != l.second.end(); it++) {
+            if (it->first == c) {
+                l.second.erase(it);
+                no_roads--;
+                break;
+            }
+        }
+    }
+    adj_l.erase(c);
+    no_cities--;
+}
+
+
+
+void graph::delete_road(string c1, string c2) {
+    c1 = adjust_name(c1);
+    c2 = adjust_name(c2);
+
+    // Check if cities exist
+    if (adj_l.find(c1) != adj_l.end() && adj_l.find(c2) != adj_l.end()) {
+        bool roadFound = false;
+        // Remove edge from c1 to c2
+        for (auto it = adj_l[c1].begin(); it != adj_l[c1].end(); ++it) {
+            if (it->first == c2) {
+                adj_l[c1].erase(it);
+                no_roads--;
+                roadFound = true;
+                break;
+            }
+        }
+        // Remove edge from c2 to c1
+        for (auto it = adj_l[c2].begin(); it != adj_l[c2].end(); ++it) {
+            if (it->first == c1) {
+                adj_l[c2].erase(it);
+                roadFound = true;
+                break;
+            }
+        }
+        // Display message if road between cities not found
+        if (!roadFound) {
+            cout << "There is no road between " << c1 << " and " << c2 << "." << "\n\n";
+        }
+    }
+    else {
+        // Display message if one or both cities do not exist
+        cout << "One or both cities do not exist in the graph." << endl;
+    }
+}
+
+
+
+void graph::display_graph()
+{
+    cout << "tha road map is :" << endl;
+    unordered_map<string, list< pair <string, int>>> ::iterator it = adj_l.begin();
+    list < pair <string, int>> ::iterator it_l;
+    for (; it != adj_l.end(); it++)
+    {
+        cout << it->first << " -> ";
+
+        it_l = it->second.begin(); //iterate over list (second/value of map)
+        cout << "\{ ";
+        for (; it_l != it->second.end(); it_l++)
+        {
+            cout << " ( ";
+            cout << it_l->first << "," << it_l->second;
+            cout << " ) , ";
+        }
+        cout << "\ } " << endl;
+    }
+
+}
+
+
+
+string graph::adjust_name(string word) {
+    string ans;
+    for (int i = 0; i < word.size(); i++) {
+        char c = word[i];       //iterate over every character
+        if (i == 0)
+        {    //capitalize first letter
+            char tmp2 = toupper(c);
+            ans += (tmp2);
+        }
+        else
+        {
+            char tmp3 = tolower(c);//lowercase the rest
+            ans += (tmp3);
+        }
+    }
+    return ans;
+}
+
+
+int graph::get_no_cities() {
+    return no_cities;
+}
+
+
+int graph::get_no_roads() {
+    return no_roads;
+}
+
+
+bool graph::search_city(string name) {
+
+    name = adjust_name(name);                         //capitalize first letter and make the rest in lowercase
+    return adj_l.find(name) != adj_l.end();           //check if city already exists
+
+}
+
+
+//Search_alogrithm.h
+
+#pragma once
+#include"graph.h"
+#include<iostream>
+class Search_alogrithm
+{
+	unordered_map<string, bool>visited;
+
+public:
+	void BFS(string, graph);
+	void DFS(string, graph);
+
+};
+
+//Search_alogrithm.cpp
+
+#include "Search_alogrithm.h"
+#include<iostream>
+#include<unordered_map>
+#include <queue>
+#include <stack>
+#include<list>
+using namespace std;
+
+void Search_alogrithm::BFS(string city, graph g) {
+    if (g.adj_l.empty()) {                    //checks wheather the graph is empty or not
+        cout << "Graph is empty" << endl;
+        return;
+    }
+
+    city = g.adjust_name(city);
+
+    if (!g.search_city(city)) {                // Check if the city exists in the graph
+        cout << "City " << city << " doesn't exist in the graph" << endl;
+        return;
+    }
+
+    unordered_map<string, bool> visited;
+    visited[city] = true;
+
+    queue<string> nextCity;
+    nextCity.push(city);
+
+    cout << "BFS Traversal starting from city " << city << ":" << endl;
+    while (!nextCity.empty()) {                //loop until the queue is empty
+
+        string current = nextCity.front();
+        nextCity.pop();
+
+        cout << "Visiting city: " << current << endl;
+
+        for (auto& connectedCity : g.adj_l[current]) {           // Visit all connected cities of the current city
+            if (!visited[connectedCity.first]) {                 //if the connected city hasn't been visited mark it as visited and push it into the queue
+                nextCity.push(connectedCity.first);
+                visited[connectedCity.first] = true;
+                cout << "   Found a new city: " << connectedCity.first << endl;
+            }
+        }
+    }
+}
+
+
+void Search_alogrithm::DFS(string start, graph g) {
+    if (g.adj_l.empty()) { cout << "the graph is empty !!"; return; }
+    string last = start;
+    last = g.adjust_name(start);
+    if (g.adj_l.find(last) == g.adj_l.end()) { cout << "the city is not in the graph!!"; return; }
+
+    stack<string>stack;
+    list < pair<string, int>>::iterator it;
+
+
+
+    stack.push(last);
+    while (!stack.empty()) {
+        if (!visited[last])
+        {
+            cout << "dfs traversal :" << last << endl;
+        }
+
+        visited[last] = 1;
+
+        stack.pop();
+
+        it = g.adj_l[last].begin();
+
+        while (it != g.adj_l[last].end()) {
+            if (visited[it->first] == 0)
+                stack.push(it->first);
+            it++;
+        }
+        if (!stack.empty())
+            last = stack.top();
+    }
+    // unordered_map<string, list< pair <string, int>>> ::iterator it1 = g.adj_l.begin();
+
+    auto it1 = g.adj_l.begin();
+    for (; it1 != g.adj_l.end(); it1++)
+    {
+        if (visited[it1->first] == 0) {
+            cout << "others\n";
+            DFS(it1->first, g);
+        }
+    }
+
+}
+
+
+
+
+
+
+
+
