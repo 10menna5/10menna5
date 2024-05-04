@@ -1,8 +1,13 @@
-//graph.h
+///graph.h
+
 #pragma once
 #include<iostream>
 #include <string>
 #include<unordered_map>
+#include<queue>
+#include<fstream>
+#include <stack>
+#include<list>
 using namespace std;
 
 class graph {
@@ -11,6 +16,7 @@ class graph {
 public:
 
     unordered_map<string, list< pair <string, int>>>adj_l;
+    unordered_map<string, bool>visited;
 
     graph();
     void add_graph();
@@ -26,9 +32,14 @@ public:
     int get_no_cities();
     int get_no_roads();
 
+    void BFS(string, graph);
+    void DFS(string, graph);
+    void prim_mst(unordered_map<string, list<pair<string, int>>> g, string startVertex);
+    void write_to_file(unordered_map<string, list<pair<string, int>>> g);
+    void read_from_file();
 
 };
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //graph.cpp
 
 #include"graph.h"
@@ -297,33 +308,7 @@ bool graph::search_city(string name) {
 
 }
 
-
-//Search_alogrithm.h
-
-#pragma once
-#include"graph.h"
-#include<iostream>
-class Search_alogrithm
-{
-	unordered_map<string, bool>visited;
-
-public:
-	void BFS(string, graph);
-	void DFS(string, graph);
-
-};
-
-//Search_alogrithm.cpp
-
-#include "Search_alogrithm.h"
-#include<iostream>
-#include<unordered_map>
-#include <queue>
-#include <stack>
-#include<list>
-using namespace std;
-
-void Search_alogrithm::BFS(string city, graph g) {
+void graph::BFS(string city, graph g) {
     if (g.adj_l.empty()) {                    //checks wheather the graph is empty or not
         cout << "Graph is empty" << endl;
         return;
@@ -361,7 +346,7 @@ void Search_alogrithm::BFS(string city, graph g) {
 }
 
 
-void Search_alogrithm::DFS(string start, graph g) {
+void graph::DFS(string start, graph g) {
     if (g.adj_l.empty()) { cout << "the graph is empty !!"; return; }
     string last = start;
     last = g.adjust_name(start);
@@ -394,22 +379,153 @@ void Search_alogrithm::DFS(string start, graph g) {
             last = stack.top();
     }
     // unordered_map<string, list< pair <string, int>>> ::iterator it1 = g.adj_l.begin();
-
     auto it1 = g.adj_l.begin();
-    for (; it1 != g.adj_l.end(); it1++)
+    bool found = 0;
+    cout << "do you want to see the unconnected cities ? press y";
+    char ans;
+    cin >> ans;
+    switch (ans)
     {
-        if (visited[it1->first] == 0) {
-            cout << "others\n";
-            DFS(it1->first, g);
+    case 'y':
+    case'Y':
+
+        for (; it1 != g.adj_l.end(); it1++)
+        {
+            if (visited[it1->first] == 0) {
+                cout << endl;
+                DFS(it1->first, g);
+                found = 1;
+            }
+        }
+        if (!found) { cout << "there is no unconnected cities"; }
+
+
+        break;
+    default:
+        break;
+    }
+
+
+
+}
+
+void graph::prim_mst(unordered_map<string, list<pair<string, int>>> g, string startVertex) {
+    unordered_map<string, list<pair<string, int>>>graph;
+    graph = g;
+    unordered_map<string, int> key;
+    unordered_map<string, string> parent;
+    unordered_map<string, bool> inMST;
+    unordered_map<string, int>weight_edge;
+    int INF = INT_MAX;
+    int total_weight = 0;
+
+    priority_queue<pair<int, string>, vector<pair<int, string>>, greater<pair<int, string>>> pq;
+
+    pq.push({ 0, startVertex });
+    key[startVertex] = 0;
+
+    for (auto vertex : graph) {
+        string v = vertex.first;
+        if (v != startVertex) {
+            key[v] = INF;
+            inMST[v] = false;
         }
     }
 
+    while (!pq.empty()) {
+
+        string u = pq.top().second;
+        int to_weight = pq.top().first;
+        pq.pop();
+        if (inMST[u]) {
+            continue; // Skip if already included in MST
+        }
+
+        inMST[u] = true;
+        total_weight += to_weight;
+
+
+        for (auto edge : graph.at(u)) {
+            string v = edge.first;
+            int weight = edge.second;
+
+            // If v is not in MST and weight of (u,v) is smaller than current key of v
+            if (!inMST[v] && weight < key[v]) {
+
+                key[v] = weight;
+                pq.push({ key[v], v });
+                parent[v] = u;
+                weight_edge[u + "-" + v] = weight;
+            }
+        }
+    }
+
+    // Print the edges of MST
+    cout << "Edges of Minimum Spanning Tree:" << endl;
+    for (auto vertex : parent) {
+
+
+        cout << vertex.second << " - " << vertex.first << " - " << weight_edge[vertex.second + "-" + vertex.first] << endl;
+
+    }
+    cout << "Total weight of the Minimum Spanning Tree: " << total_weight << endl;
 }
 
 
 
+void graph::write_to_file(unordered_map<string, list<pair<string, int>>> graph) {
+    ofstream f;
+    f.open("graph.txt");
+    if (!f.is_open()) {
+        cout << "Failed to open file   or writing." << endl;
+        return;
+    }
+    bool found=0;
+    for (auto vertex : graph) {
+        string u = vertex.first;
+        list<pair<string, int>> edges = vertex.second;
+        found = 0;
+        for (auto edge : edges) {
+            string v = edge.first;
+            int weight = edge.second;
+            f << u << " " << v << " " << weight << endl;
+            found = 1;
+        }
+        if (found==0) { f << u << endl; }
+        
+    }
+    f.close();
+    cout << "Graph data has been written to  successfully." << endl;
+
+}
 
 
+void graph:: read_from_file() {
+    ifstream file;
+    file.open("graph.txt");
+    if (!file.is_open()) {
+        cout << "Failed to open file for reading." << endl;
+        return;
+    }
+    string u, v;
+    int weight;
+    cout << "im here";
+   
+
+    while (file >> u) {
+        cout << u << " ";
+        if (file >> v >> weight) {
+         
+            adj_l[u].push_back({ v, weight });
+        }
+        else {
+          
+            adj_l[u]; 
+            
+        }
+    }
+    file.close();
+    cout << "Graph data has been read successfully." << endl;
 
 
-
+}
