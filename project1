@@ -8,6 +8,7 @@
 #include<fstream>
 #include <stack>
 #include<list>
+#include <sstream>
 using namespace std;
 
 class graph {
@@ -499,7 +500,6 @@ void graph::write_to_file(unordered_map<string, list<pair<string, int>>> graph) 
 
 }
 
-
 void graph:: read_from_file() {
     ifstream file;
     file.open("graph.txt");
@@ -509,23 +509,31 @@ void graph:: read_from_file() {
     }
     string u, v;
     int weight;
-    cout << "im here";
+  
+    string line;
+    while (getline(file, line)) {
    
+        stringstream ss(line);
+        ss >> u >> v >> weight;
 
-    while (file >> u) {
-        cout << u << " ";
-        if (file >> v >> weight) {
-         
-            adj_l[u].push_back({ v, weight });
+        
+        if (ss.fail()) {
+            adj_l[u]; 
         }
         else {
-          
-            adj_l[u]; 
-            
+            adj_l[u].push_back({ v, weight });
         }
     }
+
     file.close();
     cout << "Graph data has been read successfully." << endl;
 
 
 }
+
+
+
+
+
+
+
